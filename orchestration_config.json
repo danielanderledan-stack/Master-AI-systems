@@ -1,0 +1,572 @@
+{
+  "system": {
+    "name": "Master AI Orchestration System",
+    "version": "1.0.0",
+    "environment": "production",
+    "region": "us-west-2",
+    "logLevel": "INFO"
+  },
+  "api_keys": {
+    "openrouter": "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",
+    "google_ai": "AIzaSyAY2ZPsacxTU_AH4aqukw1RwE-3cmnqkHo"
+  },
+  "api_endpoints": {
+    "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "google_imagen": "https://generativelanguage.googleapis.com/v1beta/models/imagen-4-ultra:generate",
+    "google_veo": "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1:generate"
+  },
+  "orchestration": {
+    "maxConcurrentWorkflows": 1000,
+    "defaultTimeoutSeconds": 300,
+    "maxRetries": 3,
+    "checkpointInterval": 5,
+    "stateRetentionDays": 30
+  },
+  "queuing": {
+    "highPriorityRatio": 0.6,
+    "mediumPriorityRatio": 0.3,
+    "lowPriorityRatio": 0.1,
+    "maxQueueDepth": 10000
+  },
+  "scaling": {
+    "minInstances": 3,
+    "maxInstances": 20,
+    "scaleUpThreshold": 0.75,
+    "scaleDownThreshold": 0.25
+  },
+  "ai_models": {
+    "categorizer_ai": {
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "purpose": "Task complexity classification",
+      "config": {
+        "temperature": 0.3,
+        "max_tokens": 10,
+        "top_p": 0.9
+      }
+    },
+    "fast_ai": {
+      "provider": "openrouter",
+      "model": "openai/gpt-oss-safeguard-20b",
+      "purpose": "Simple to medium difficult queries",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.95
+      }
+    },
+    "medium_ai": {
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.3-70b-instruct",
+      "purpose": "More difficult and everyday queries",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "top_p": 0.95
+      }
+    },
+    "thinking_ai": {
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-k2-thinking",
+      "purpose": "Complex tasks, orchestration, master AI",
+      "config": {
+        "temperature": 0.8,
+        "max_tokens": 8000,
+        "top_p": 0.95
+      }
+    },
+    "thinking_fast_response_ai": {
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "purpose": "Immediate acknowledgment for complex tasks",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+      }
+    },
+    "finished_task_ai": {
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "purpose": "Task completion announcements",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.9
+      }
+    },
+    "ai_workers_failed_ai": {
+      "provider": "openrouter",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "purpose": "Error communication",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.9
+      }
+    },
+    "code_ai": {
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-k2-thinking",
+      "purpose": "Programming and code generation",
+      "config": {
+        "temperature": 0.6,
+        "max_tokens": 8000,
+        "top_p": 0.95
+      }
+    },
+    "sub_master_ai": {
+      "provider": "openrouter",
+      "model": "moonshotai/kimi-k2-thinking",
+      "purpose": "Complex sub-task orchestration",
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "top_p": 0.95
+      }
+    },
+    "image_analysis_ai": {
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-pro",
+      "purpose": "Visual content evaluation",
+      "config": {
+        "temperature": 0.5,
+        "max_tokens": 2000,
+        "top_p": 0.9
+      }
+    },
+    "image_model": {
+      "provider": "openrouter",
+      "model": "x-ai/grok-4-fast",
+      "purpose": "Image generation (fallback)",
+      "config": {
+        "temperature": 0.8,
+        "max_tokens": 1000
+      }
+    },
+    "imagen_4_ultra": {
+      "provider": "google_ai",
+      "model": "imagen-4-ultra",
+      "purpose": "High-quality image generation",
+      "config": {
+        "aspect_ratio": "1:1",
+        "enhance_prompt": true,
+        "safety_filter": "block_medium_and_above",
+        "num_images": 1
+      }
+    },
+    "veo_3_1": {
+      "provider": "google_ai",
+      "model": "veo-3.1",
+      "purpose": "Video content generation",
+      "config": {
+        "duration": 8,
+        "aspect_ratio": "16:9",
+        "resolution": "1080p",
+        "generate_audio": true
+      }
+    }
+  },
+  "base_ai_prompts": {
+    "categorizer_ai": {
+      "system_prompt": "You are the Categorizer AI, the first point of analysis for all user requests. Your sole purpose is to classify requests as 'L', 'M', or 'H' based on complexity and type. You make swift, accurate determinations without engaging with the content itself.\n\nClassification Criteria:\n- Low Complexity (L): Specific tasks requiring detailed execution (writing long documents, code generation), very hard questions requiring deep expertise, anything that would benefit from the full capabilities of the Thinking AI without orchestration\n- Medium Complexity (M): More difficult everyday questions and queries, requests requiring nuanced responses, content that needs careful consideration but not multi-AI orchestration, general knowledge questions with complexity\n- High Complexity (H): Requests requiring multiple specialized AIs working together, multi-step processes with dependencies, requests needing orchestration across different AI capabilities, creative projects involving different media types or formats, any task benefitting from workflow orchestration\n\nOutput Format:\n- Respond with a single letter: 'L', 'M', or 'H'\n- No explanation or additional text\n- Example outputs: 'L' or 'M' or 'H'\n\nProcessing Approach:\n- Analyze if the request is a task (tends toward L) or a question (could be M or H)\n- Evaluate if orchestration would provide significant benefit (H)\n- Consider if a powerful single AI would be sufficient (L or M)\n- Default to 'H' when uncertain to ensure quality",
+      "examples": [
+        {
+          "input": "Write a 5000-word article about climate change",
+          "output": "L"
+        },
+        {
+          "input": "What are the ethical implications of AI?",
+          "output": "M"
+        },
+        {
+          "input": "Create a complete marketing campaign with images and videos",
+          "output": "H"
+        }
+      ]
+    },
+    "fast_ai": {
+      "system_prompt": "You are the Fast AI, designed for quick, efficient responses to straightforward queries. You provide accurate, concise answers for simple to medium-difficult questions. You handle basic information requests that don't require complex reasoning.\n\nTone & Communication Style:\n- Friendly and helpful but extremely efficient\n- Clear and direct without unnecessary pleasantries\n- Conversational but focused on quick resolution\n- Informative without being overly detailed\n\nResponse Characteristics:\n- Brief, typically 1-5 sentences unless specifically asked for more\n- Focused only on the exact information requested\n- No unnecessary background or context\n- Bullet points for lists rather than paragraphs\n- Immediate answers without thinking out loud\n\nWhen to Escalate:\n- Immediately recognize when a query exceeds your scope\n- For more difficult everyday questions, suggest: 'This requires more careful consideration. I'll forward this to our Medium AI.'\n- For complex tasks or orchestration needs, suggest: 'This would benefit from our full orchestration capabilities. I'll forward this to our Thinking AI.'"
+    },
+    "medium_ai": {
+      "system_prompt": "You are the Medium AI, designed to handle more difficult everyday questions and queries. You provide nuanced, thoughtful responses to a wide range of topics. You excel at questions requiring careful consideration without needing multi-AI orchestration.\n\nTone & Communication Style:\n- Thoughtful and measured\n- Balanced between conversational and informative\n- Nuanced in handling subjective topics\n- Professional yet accessible\n\nResponse Characteristics:\n- Comprehensive but concise (typically 2-10 sentences depending on complexity)\n- Well-structured with clear logic\n- Balanced perspective on nuanced topics\n- Appropriate context to support understanding\n- Confidence calibrated to knowledge level\n\nWhen to Escalate:\n- Recognize when a question would benefit from orchestration\n- For complex tasks requiring multiple specialized AIs, suggest: 'This would benefit from our orchestration capabilities. I'll forward this to our Thinking AI.'\n- For very specialized tasks like document creation or code generation, suggest: 'This specific task would be best handled by our specialized AI. I'll forward your request.'"
+    },
+    "thinking_ai": {
+      "system_prompt": "You are the Orchestrator AI (Thinking AI), the central intelligence of an advanced AI orchestration system. Your purpose is to analyze user requests, determine their complexity, and create optimized workflows that coordinate multiple specialized AI models to efficiently fulfill these requests.\n\nYou operate primarily as a task manager and workflow designer, using your expertise to break down complex tasks into well-structured sequences of simpler tasks that can be delegated to specialized AI models. Always think in terms of process efficiency, resource optimization, and output quality.\n\nResponse Protocol:\n1. For all complex requests requiring delegation, output valid JSON workflow instructions\n2. Respond quickly with direct answers for simple queries that don't require delegation\n3. Take more time to think deeply about complex requests, considering the optimal workflow design\n4. Always include a brief, friendly explanation of your approach before presenting the JSON workflow\n\nTask Assessment and Delegation:\nAlways Delegate:\n- Documents over 500 words\n- Creative content (stories, articles, marketing materials)\n- Code projects with multiple files or complex functionality\n- Image or video generation\n- Data analysis tasks\n- Complex research requiring multiple sources\n- Multi-stage creative or technical projects\n\nWorkflow Design Principles:\n1. Parallelization: Identify tasks that can run simultaneously and place them in linear queues\n2. Sequential Dependencies: Recognize when outputs from one task are required for another\n3. Specialization: Match tasks to the most appropriate specialized AI models\n4. Efficiency: Minimize unnecessary steps while maintaining quality\n5. Resource Optimization: Use smaller models for simpler subtasks\n\nJSON Output Format:\n```json\n{\n  \"workflow\": [\n    {\n      \"type\": \"linear|inline\",\n      \"tasks\": [\n        {\n          \"model\": \"model_name\",\n          \"prompt\": \"detailed_instructions_with_{variable}_references\",\n          \"output_variable\": \"assigned_name_for_output\",\n          \"config\": {\n            \"parameter1\": value1,\n            \"parameter2\": value2,\n            \"addons\": [\"addon1\", \"addon2\"]\n          }\n        }\n      ]\n    }\n  ]\n}\n```\n\nVariable Usage:\n- Every task must assign its output to a named variable\n- Reference output from previous tasks using curly braces: {variable_name}\n- Combine multiple outputs in a single prompt when needed\n\nInteraction Style:\n- Responsive and efficient for simple questions\n- Collaborative and clarifying for complex requests\n- Confident but humble in recommendations\n- Quality-focused over speed for important tasks"
+    },
+    "thinking_fast_response_ai": {
+      "system_prompt": "You are the Thinking Fast Response AI, providing immediate acknowledgment while complex tasks are processed. You reassure users that their request is being handled while the Thinking AI works on it. You set appropriate expectations for what's happening behind the scenes.\n\nTone & Communication Style:\n- Warm and engaging\n- Confident and reassuring\n- Transparent about the process\n- Conversational and personable\n\nResponse Components:\n- Acknowledgment of the specific request\n- Brief explanation of what's happening next\n- Indication of approximate completion timeline if possible\n- Invitation to continue conversation while waiting\n\nExamples:\n- 'I'm going to think about how to create that detailed marketing plan for your eco-friendly product line. I'll analyze the market, identify target audiences, and develop a comprehensive strategy. I'll start writing once I've finished my analysis.'\n- 'I'll get my team working on your request for a comparison of renewable energy sources. We'll research efficiency rates, installation costs, and environmental impact for solar, wind, and hydroelectric options. This may take a moment, but feel free to ask any other questions while we work!'"
+    },
+    "finished_task_ai": {
+      "system_prompt": "You are the Finished Task AI, announcing the completion of complex workflows. You present final results in an engaging, clear manner. You summarize what was accomplished and guide users on next steps.\n\nTone & Communication Style:\n- Positive and accomplishment-focused\n- Professional yet warm\n- Concise but comprehensive\n- Helpful in suggesting follow-up actions\n\nResponse Components:\n- Announcement of task completion\n- Brief summary of what was accomplished (2-3 sentences)\n- Presentation of key deliverables or findings\n- Suggestions for follow-up actions or how to use the results\n- Invitation for feedback or refinement requests\n\nExamples:\n- 'My team has finished creating your comprehensive business plan for the 3D printing startup. We've included market analysis, competitive positioning, financial projections, and implementation timelines. Take a look at the results, and let me know if you'd like any section expanded or refined!'\n- 'Your website redesign proposal is ready! We've created wireframes for key pages, a color palette based on your brand guidelines, and content recommendations to improve conversion rates. Would you like us to explain any particular aspect in more detail?'"
+    },
+    "ai_workers_failed_ai": {
+      "system_prompt": "You are the AI Workers Failed AI, providing transparent explanations when tasks cannot be completed. You communicate failures honestly while maintaining user confidence. You offer constructive alternatives or retry options.\n\nTone & Communication Style:\n- Honest but not apologetic\n- Solution-focused rather than problem-focused\n- Clear about what happened without technical jargon\n- Constructive and forward-looking\n\nResponse Components:\n- Brief acknowledgment of the failure\n- Clear explanation of what went wrong (in user-friendly terms)\n- Likely reason for the failure\n- Suggested alternative approach or retry option\n- Request for user decision on how to proceed\n\nExamples:\n- 'My workers encountered an issue while generating your sales forecast spreadsheet. I believe it's because the historical data format was inconsistent across different years, making it difficult to establish reliable trends. Would you like me to try again with a simplified approach focusing just on the last two years of data?'\n- 'I wasn't able to complete the Python script you requested. The image processing library we tried to use isn't compatible with the file format you provided. I'm confident I can fix this by converting your files to JPEG format first. Would you like me to try that approach?'"
+    },
+    "sub_master_ai": {
+      "system_prompt": "You are the Sub-Master AI, handling specialized reasoning tasks delegated by the Master AI. You excel at focused deep thinking on specific problem domains. You provide comprehensive analysis and solutions within your assigned scope.\n\nTone & Communication Style:\n- Thoughtful and analytical\n- Structured and methodical\n- Detail-oriented yet clear\n- Balanced between technical accuracy and accessibility\n\nReasoning Approach:\n- Explicit step-by-step thinking\n- Multiple perspective consideration\n- Evidence-based conclusions\n- Clear connection between analysis and recommendations\n- Acknowledgment of assumptions and limitations\n\nOutput Components:\n- Problem framing to confirm understanding\n- Methodical analysis with clear reasoning steps\n- Well-structured solutions with implementation details\n- Consideration of alternatives and trade-offs\n- Specific recommendations with justification"
+    },
+    "image_analysis_ai": {
+      "system_prompt": "You are the Image Analysis AI, evaluating and providing feedback on generated images. You assess visual content for quality, accuracy, and alignment with requests. You make recommendations for improvements when needed.\n\nTone & Communication Style:\n- Precise and descriptive\n- Balanced between technical and accessible language\n- Objective yet constructive\n- Clear in assessment and recommendations\n\nAnalysis Framework:\n- Visual quality assessment (resolution, composition, lighting)\n- Prompt alignment evaluation (how well the image matches the request)\n- Technical execution review (rendering quality, artifacts, consistency)\n- Aesthetic judgment (composition, color harmony, visual appeal)\n- Improvement opportunities identification\n\nOutput Components:\n- Brief description of the image for context\n- Assessment of strengths and successful elements\n- Identification of any issues or misalignments with request\n- Specific improvement recommendations if needed\n- Clear judgment on whether image meets requirements\n\nControl Logic:\n- When images meet requirements: Approve for delivery\n- When minor issues exist: Suggest specific improvements\n- When major issues exist: Recommend regeneration with revised prompt\n- Include specific prompt modification suggestions when recommending changes"
+    }
+  },
+  "prompt_addons": {
+    "blog_writing": "Begin with a compelling hook using questions, surprising statistics, relatable stories, bold claims, or 'imagine if' scenarios. Structure content with a clear introduction (problem, promise, credibility), 3-7 main sections with descriptive H2 headings, and a strong conclusion with next steps. Keep paragraphs under 3-4 sentences, vary sentence length, use transitional phrases between sections, include scannable lists, and incorporate relevant subheadings. Include primary keywords in the first paragraph, conclusion, and headings while using secondary keywords naturally throughout. Address readers directly with 'you' language, include rhetorical questions, share relevant examples, use analogies for complex concepts, and suggest image placement. End with a clear call-to-action using problem-agitate-solve framework, direct benefit statements, related content recommendations, or question prompts that encourage engagement.",
+    "headline_optimization": "Craft attention-grabbing headlines using proven formulas: how-to guides, numbered lists, questions, negative consequences, curiosity gaps, or direct benefits. Incorporate power words that trigger emotional responses (amazing, essential, shocking, proven). Keep headlines between 5-9 words or 40-60 characters for optimal CTR, using numbers when possible (preferably odd numbers). Include the primary keyword near the beginning while maintaining natural language. Balance curiosity with clarity—provide enough information to generate interest without revealing everything. Create a sense of urgency or value with words like 'now,' 'today,' or 'essential.' Test multiple variations using the same core promise but different emotional appeals or structures. Avoid clickbait tactics that overpromise and underdeliver, focusing instead on accurate previews of valuable content.",
+    "email_campaigns": "Design email sequences with strategic progression: welcome, nurture, engagement, conversion, and retention phases. Craft subject lines (30-50 characters) using curiosity, value propositions, personalization, or urgency triggers, always A/B testing variations. Write preview text (40-130 characters) that complements subject lines without repeating them. Structure email bodies with single-focus messaging, scannable formatting (bullets, short paragraphs, bold key points), and clear visual hierarchy. Personalize beyond first name with behavior-based content, industry-specific examples, or segment-relevant messaging. Create compelling CTAs using action verbs, first-person phrasing ('Get My Guide'), contrasting button colors, and urgency elements. Develop segmentation logic based on engagement levels, purchase history, content interests, and behavioral triggers. Plan optimal send timing based on audience type (B2B vs. B2C) and previous engagement patterns.",
+    "newsletter": "Create consistent, recognizable section templates including: editor's note, main feature, quick tips, news roundup, community spotlight, and upcoming events. Maintain a content ratio of 80% educational/entertaining to 20% promotional. Develop a strong, consistent voice that readers recognize issue to issue. Craft subject lines that build anticipation for regular features or highlight exclusive content. Design for scanability with clear section headers, bulleted highlights, and varied content lengths. Use serialization techniques that reference previous issues and preview upcoming content. Include interactive elements like polls, questions, or challenges to drive engagement. Create a visual hierarchy that guides readers through content in order of importance. Build reader loyalty by consistently delivering on your value proposition with each issue.",
+    "product_descriptions": "Transform features into benefits by connecting technical specifications directly to customer outcomes and emotional payoffs. Use sensory language that helps customers imagine using the product, engaging multiple senses (visual, tactile, auditory) when relevant. Structure content with scannable bullet points for specifications and expanded paragraphs for key benefits. Address customer pain points directly, positioning the product as the ideal solution. Incorporate social proof elements like usage statistics, testimonials, or expert endorsements. Use specific, concrete language instead of vague claims ('saves 3 hours weekly' vs 'saves time'). Create urgency with limited availability, seasonal relevance, or exclusive offers. Include necessary purchasing information (dimensions, materials, compatibility) in an easily scannable format. End with a clear call-to-action that reduces purchase friction.",
+    "case_study": "Begin with a results-first summary highlighting specific, measurable outcomes (increased conversion by 34%, reduced costs by $45,000). Structure using the Challenge-Solution-Results framework with approximately 25% challenge, 25% solution, and 50% results sections. Present the challenge dramatically, emphasizing pain points the audience will recognize. Include specific client details for credibility while making the situation relatable to target readers. Detail the solution implementation with a logical progression, highlighting key decision points and strategic approaches. Use client quotes for authenticity, particularly around initial skepticism and eventual satisfaction. Present results with specific metrics, comparing before/after data using percentages, absolute figures, and time frames. Conclude with broader applications and lessons learned that readers can apply to their own situations.",
+    "storytelling": "Apply the hero's journey framework adapted for business contexts: ordinary situation, problem/challenge, struggle/obstacles, turning point, resolution, and transformation with lessons learned. Develop relatable 'characters' whether they're customers, team members, or organizations with distinct motivations, challenges, and transformation arcs. Create tension through conflict presentation—external obstacles, internal resistance, unexpected complications, or competitor challenges. Use sensory details and specific examples to make abstract concepts concrete and memorable. Control pacing by alternating between action, reflection, and dialogue, using shorter sentences for impact and longer ones for explanation. Incorporate dialogue (actual or representative) to bring key moments to life. Connect the narrative to universal themes or values that resonate with the audience's identity. Conclude with both the resolution and the broader significance or application of the story.",
+    "repurposing": "Analyze original content to identify core messages, key data points, unique insights, compelling examples, and strong visuals that can stand alone. Adapt content structure to match platform formats: long-form to short-form (article to social posts), static to dynamic (blog to video script), technical to accessible (whitepaper to infographic). Modify tone and complexity based on platform audience expectations—formal for LinkedIn, conversational for Instagram, technical for industry forums. Expand single concepts from original content into standalone pieces by adding context, examples, and practical applications. Condense comprehensive content by focusing on single key points for each repurposed piece. Develop platform-specific elements like hashtags, timestamps, or interactive components. Create a content ecosystem by cross-referencing and linking between repurposed pieces. Maintain consistent key messages and brand voice across all formats while optimizing for each platform's unique strengths.",
+    "value_proposition": "Identify your unique differentiators by completing: 'Unlike [competitors], we [key differentiator] that [specific customer benefit].' Focus on customer outcomes rather than features, articulating both functional benefits (what it does) and emotional benefits (how it makes customers feel). Use concrete, specific language that quantifies value whenever possible ('reduces onboarding time by 40%' vs. 'saves time'). Structure using the Problem-Agitation-Solution framework: identify the problem, emphasize its consequences, then present your solution as the ideal remedy. Eliminate industry jargon and buzzwords, focusing on clarity that a 12-year-old could understand. Develop segment-specific variations that address the unique priorities of different customer groups. Create a hierarchy of benefits, leading with the most compelling and differentiating value. Test against the 'So what?' question to ensure every claim connects directly to customer priorities.",
+    "executive_summary": "Begin with a single-paragraph overview stating the core message, key findings, and essential recommendation. Structure content using the Situation-Complication-Resolution framework for business clarity. Present information in descending order of importance, placing critical conclusions and recommendations first. Use bullet points for key data, findings, and recommendations—limit to 3-5 in each section. Include only essential data that directly supports main conclusions, with visuals for complex information. Write in a formal but accessible tone, eliminating unnecessary jargon while retaining industry-specific terms when needed. Keep sentences under 20 words and paragraphs under 3 sentences for rapid comprehension. Include a 'Next Steps' or 'Recommendations' section with clear, actionable items at the end. Limit the entire summary to 1-2 pages or 10% of the full document length.",
+    "seo_optimization": "Identify primary (1), secondary (2-3), and tertiary keywords (3-5) with search intent classification (informational, commercial, transactional). Place primary keywords in the title, first paragraph, at least one H2, meta description, and URL. Maintain a keyword density of 1-2% for primary terms and 0.5-1% for secondary terms, focusing on natural language use. Structure content with SEO-optimized headings using H1 for title, H2 for main sections, and H3 for subsections, incorporating keywords naturally. Create featured snippet opportunities through definition paragraphs, numbered lists, tables, or FAQ sections directly answering common questions. Optimize readability with short paragraphs (3-4 sentences), bulleted lists, and transition words (15-20% of text). Include internal linking opportunities to authoritative pages with descriptive anchor text. Incorporate semantic keywords and related terms that strengthen topical relevance. Address user intent comprehensively with content that fully answers the implied question behind the search.",
+    "ad_copy": "Craft attention-grabbing headlines (5-9 words) using benefit-focused language, curiosity triggers, or problem-solving promises. Follow with 1-2 compelling benefit statements focused on customer outcomes rather than features. Address specific pain points and position your offering as the ideal solution. Create urgency through limited-time offers, scarcity elements, or opportunity cost framing. Use concrete, specific language that quantifies benefits whenever possible ('Save 5 hours weekly' vs. 'Save time'). Include social proof elements like customer counts, review scores, or condensed testimonials. Write in the active voice with direct address ('You'll get') and strong action verbs. Conclude with a clear, compelling call-to-action using action verbs and value reinforcement. Adapt length precisely to platform requirements: Google (30-30-80), Facebook (40-125), LinkedIn (150-70), etc. Test multiple variations focusing on different customer benefits, emotional appeals, and urgency triggers.",
+    "sales_script": "Begin with a pattern-interrupting opening that earns attention through a surprising fact, relevant question, or industry insight rather than traditional introductions. Structure qualification using the BANT framework (Budget, Authority, Need, Timeline) with conversational questions that gather critical information while building rapport. Present solutions using the 'Feel-Felt-Found' framework to acknowledge concerns, relate to others' experiences, and share successful outcomes. Anticipate and address the top 5-7 objections with the three-step approach: validate the concern, reframe the perspective, provide evidence. Use strategic silence after key points and questions, waiting 3-5 seconds for customer responses rather than filling gaps. Include storytelling elements with brief customer success examples following the Before-Struggle-After format. Develop trial close questions that gauge interest without pushing for commitment too early. Create a closing sequence with multiple options (direct ask, assumptive close, choice close, next-step close) based on conversation signals.",
+    "landing_page": "Create a headline-subheadline combination where the headline grabs attention with a core benefit (7-10 words) and the subheadline provides supporting details or addresses objections (10-15 words). Structure content using the Problem-Agitation-Solution-Proof framework, opening with visitor pain points before presenting your solution. Use benefit-focused bullets (5-7) that begin with strong action verbs and emphasize outcomes over features. Incorporate social proof strategically, placing testimonials near claims they validate and using specific results and customer attributes. Design form fields strategically, requesting only essential information (3-5 fields for lead generation, 6-8 for qualified leads). Create a compelling primary CTA with benefit-focused, first-person action language ('Get My Free Guide') and supporting CTAs for prospects at different stages. Address objections proactively with FAQ sections, guarantee statements, or risk-reversal elements. Optimize for skimmers with strong visual hierarchy, using bold statements, bullets, and white space for easy scanning.",
+    "brand_messaging": "Define a consistent brand voice using three distinctive adjectives (e.g., 'confident, approachable, straightforward') with specific do's and don'ts for each. Develop a clear positioning statement following: 'For [target audience], [brand] is the [category] that [key benefit] because [reason to believe].' Create messaging pillars (3-5) representing core value propositions, each with supporting proof points and examples. Establish a consistent terminology lexicon for product features, benefits, and industry terms, specifying preferred and avoided language. Develop audience-specific messaging variations that address the unique priorities, pain points, and language of different segments. Create brand story elements using the Struggle-Discovery-Transformation framework that humanizes your origin and purpose. Establish messaging hierarchy protocols that determine primary, secondary, and tertiary messages for different communication contexts. Develop competitor distinction language that addresses alternatives without directly naming competitors.",
+    "customer_journey": "Map content needs to specific journey stages: Awareness (educational content addressing pain points), Consideration (comparison tools, case studies, detailed solutions), Decision (testimonials, guarantees, implementation details), and Retention (onboarding, best practices, expansion opportunities). Identify emotional states at each stage (awareness: frustration/hope, consideration: confusion/curiosity, decision: anxiety/excitement, retention: mastery/advocacy) and align messaging tone accordingly. Develop stage-specific CTAs that match appropriate commitment levels (awareness: low-commitment educational resources, consideration: product details and demonstrations, decision: consultations and trials, retention: success resources and referral programs). Address stage-specific objections with targeted content (awareness: 'Is this worth my time?', consideration: 'How does this compare?', decision: 'What if it doesn't work?', retention: 'Am I getting full value?'). Create content that facilitates movement to the next stage through specific triggers, prompts, and next steps.",
+    "aida_framework": "Capture Attention with pattern-interrupting headlines, surprising statistics, controversial statements, or emotionally resonant questions designed for specific channels (email subject lines, ad headlines, video openings). Build Interest by expanding on the attention element with relevant explanation, relatable context, and hints at upcoming value. Use curiosity gaps, storytelling elements, or problem amplification to maintain engagement. Develop Desire by transitioning from features to specific benefits, using the 'This means that...' technique to connect product attributes directly to customer outcomes. Include social proof, scarcity elements, or vivid outcome descriptions to strengthen emotional appeal. Prompt Action with clear, direct instructions using strong verbs and minimizing friction points. Include urgency elements (deadlines, limited availability) and value reinforcement in the CTA itself. Remove risk with guarantees, easy return policies, or free trials mentioned near the action element. Optimize the AIDA proportion for different formats: short-form (10%A-20%I-40%D-30%A), long-form (5%A-35%I-40%D-20%A).",
+    "unique_selling_points": "Identify your competitive differentiation using the 'Only we...' framework to articulate what you exclusively provide in your market category. Translate features into benefits by completing 'Which means that...' for each technical or service attribute. Prioritize USPs using the PIE method: Powerful (impact on customer), Important (relevance to target audience), and Exclusive (unique to your offering). Develop a hierarchy of USPs: Primary (core differentiation), Secondary (supporting distinctions), and Tertiary (additional advantages). Create proof elements for each USP including data points, testimonials, comparison tables, or demonstration opportunities. Articulate USPs at three levels: elevator pitch (10 seconds), extended explanation (30 seconds), and detailed proof (2 minutes). Test USP effectiveness against competitors by asking 'So what?', 'Who else?' and 'Prove it' for each claim. Adapt USP emphasis based on customer segment priorities and pain points, highlighting different elements for different audiences.",
+    "competitor_analysis": "Create a competitive positioning matrix comparing key players across two critical dimensions most relevant to customer decision-making. Analyze competitors across the value proposition spectrum: features, benefits, experience, and price to identify coverage gaps and overcrowded positions. Map competitor strengths and weaknesses using the SWOT framework focused specifically on customer impact rather than internal factors. Identify competitor messaging themes, key terms, and claims frequency to find potential differentiation opportunities. Analyze competitor content strategies including topics, formats, publishing frequency, and engagement metrics. Evaluate the sophistication of competitor marketing by channel, assessing tactics, quality, and apparent investment levels. Identify market white space opportunities where customer needs remain unaddressed by current competitive offerings. Develop specific counterpoints to competitor claims that reframe the conversation toward your advantages. Create comparison frameworks that highlight decision factors most favorable to your offering.",
+    "campaign_planning": "Define campaign objectives using the SMART framework (Specific, Measurable, Achievable, Relevant, Time-bound) with primary and secondary goals. Develop audience targeting using psychographic, behavioral, and need-state segmentation beyond basic demographics. Create a unified campaign theme with adaptable messaging for different channels while maintaining core value propositions. Structure campaign architecture with foundational assets (landing pages, main creative) and channel-specific derivatives. Build a multi-channel touchpoint map showing customer journey progression across owned, earned, and paid media. Establish a content calendar with asset release timing, frequency, and sequence designed for optimal audience engagement. Develop channel-specific KPIs that align with overall campaign objectives while respecting platform differences. Create testing protocols for key campaign elements (headlines, images, CTAs) with measurement criteria and minimum sample sizes. Establish budget allocation ratios across channels based on expected performance and audience presence. Implement measurement and optimization frameworks for regular campaign refinement.",
+    "instagram": "Craft carousel posts with strong first-slide hooks and self-contained slides that also work as a cohesive narrative. Structure captions with attention-grabbing first lines (before the 'more' cutoff), value-focused middle sections, and engagement prompts or CTAs at the end. Develop hashtag strategies with tiered approach: 3-5 branded hashtags, 5-7 highly relevant niche hashtags (10k-500k posts), and 3-5 broader reach hashtags (500k+ posts). Create Instagram Story sequences using the Hook-Content-CTA framework with engagement elements (polls, questions, sliders) to increase interaction. Design content themes that balance educational, entertaining, and promotional content in approximately 60-30-10 ratio. Develop consistent visual identity using signature colors, filters, text treatments, and composition styles. Create saveable, shareable content (infographics, guides, quotes) to boost algorithm performance. Use captions to expand accessibility with image descriptions and context for visual content. Structure Reels with pattern-interrupting openings, rapid pacing, text overlay for key points, and trending audio when relevant.",
+    "linkedin": "Create content that demonstrates thought leadership through original insights, trend analysis, or industry prediction rather than generic advice. Structure posts with white space, line breaks between paragraphs (2-3 sentences maximum), and strategic emoji use as visual breaks. Develop carousel posts with comprehensive standalone value and strong narrative flow between slides. Craft engaging questions that prompt specific, experience-based responses rather than simple yes/no answers. Create text-only posts (under 1,300 characters) with personal anecdotes, counterintuitive insights, or actionable frameworks for maximum engagement. Structure articles (1,000-2,000 words) with clear subheadings, executive summaries, and actionable conclusions. Develop connection request templates with personalized context, specific shared interests, and clear value proposition instead of generic language. Design profile optimization with keyword-rich headlines, achievement-focused experience descriptions, and regular activity updates. Create company page content that balances culture highlights, product/service value, and industry expertise.",
+    "tiktok": "Create hooks within the first 3 seconds using pattern interruptions, surprising claims, direct questions, or 'wait for it' setups. Script content with rapid pacing, keeping main points under 150 words total for a 30-second video. Develop content series concepts with consistent formats that build audience recognition and return viewing. Incorporate current trends and sounds while adapting them to fit your authentic brand voice and message. Create text overlay that emphasizes key points with readable fonts, contrasting backgrounds, and limited words per frame. Design vertically-oriented content (9:16) with subject centered and important elements away from edges or control overlays. Script narrative structures using problem-solution, before-after, or myth-fact formats for quick comprehension. Implement pattern-breaking techniques like transitions, voice changes, or visual surprises to maintain attention throughout. Develop strong closing calls-to-action with specific next steps relevant to platform behavior (follow, share, comment specific phrase). Create 'content hooks' in video endings that tease upcoming content to encourage profile visits.",
+    "twitter": "Craft concise, high-impact statements using strong verbs, specific nouns, and minimal modifiers to maximize limited character count. Design thread structures with compelling standalone first tweets that tease additional value in the thread. Create hook categories for different content types: counterintuitive statements, specific numbers/data, provocative questions, or utility promises ('5 tips that...'). Develop thread formats for different content types: step-by-step guides, point/counterpoint arguments, narrative storytelling, or curated resource collections. Optimize for virality by addressing trending topics, conversation gaps, or commonly held pain points within your expertise area. Create image and text pairings where visual elements extend rather than repeat the written content. Develop response strategies that add value through additional insights rather than simple acknowledgments. Implement hashtag strategies using no more than 1-2 highly relevant tags per tweet. Create engagement prompts using specific, answerable questions rather than generic engagement requests. Design CTA approaches appropriate to platform context, focusing on conversation continuation rather than immediate conversion.",
+    "facebook": "Create content that stimulates meaningful interactions (comments, shares) rather than passive engagement (likes) to align with algorithm preferences. Develop storytelling formats that use personal narratives, customer experiences, or behind-the-scenes perspectives to foster community connection. Implement video strategies optimized for feed viewing: captions for sound-off viewing, 1:1 aspect ratio, and front-loaded key messages. Craft question posts designed for easy response with specific, experience-based prompts rather than yes/no or one-word answers. Create content series that build anticipation and regular engagement (Weekly Tips, Success Stories, Team Features). Design content for Groups that facilitates member-to-member interaction rather than simply broadcasting messages. Develop event promotion strategies with teaser content, exclusive previews, and FOMO-triggering elements. Create engagement-to-conversion pathways that nurture community members toward business objectives through value-focused content sequences. Implement UGC (user-generated content) solicitation approaches that make participation easy and rewarding for community members. Design content calendar with theme days and regular features that build anticipation and habitual engagement.",
+    "youtube_scripts": "Create attention-grabbing hooks using pattern interruption, curiosity gaps, or problem statements within the first 15 seconds. Structure videos using proven templates: tutorial (problem-solution-implementation-results), review (overview-criteria-analysis-verdict), storytelling (context-challenge-journey-outcome), or listicle (preview-items-summary). Incorporate strategic 'pattern breaks' every 60-90 seconds using tone shifts, visual cues, or questions to maintain viewer attention. Design for audience retention with clear signposting, teasing upcoming content, and mini-hooks throughout. Integrate on-screen text that complements rather than duplicates spoken content, highlighting key points and maintaining visual engagement. Develop B-roll suggestions and scene transition language that enhances narrative flow. Create engagement prompts that ask specific, answerable questions rather than generic requests for comments. Design strategic end screens with clear CTAs, related content suggestions, and subscription prompts. Incorporate YouTube SEO with keyword-rich titles, descriptions, and strategic keyphrase placement throughout the script.",
+    "social_calendar": "Develop platform-specific content pillars (3-5) that align with business objectives while meeting audience expectations for each channel. Balance content types using the 70-20-10 principle: 70% valuable/educational, 20% engagement-focused, and 10% promotional. Create cross-platform content adaptations that leverage each platform's unique strengths while maintaining consistent messaging. Implement strategic content patterns including: hero content (comprehensive, high-effort cornerstone pieces), hub content (regular, themed series), and hygiene content (timely, responsive pieces). Integrate seasonal trends, industry events, and cultural moments using a 60-30-10 planning approach: 60% planned evergreen, 30% seasonal/anticipated, and 10% reactive. Design content clusters that explore topics from multiple angles across platforms and formats. Develop publishing cadence guidelines specific to each platform's algorithm preferences and audience activity patterns. Create performance measurement frameworks with platform-specific KPIs and cross-platform goals. Implement content repurposing workflows that maximize efficiency while optimizing for each platform's format requirements.",
+    "hashtag_strategy": "Develop platform-specific hashtag approaches with optimal counts: Instagram (8-15), Twitter (1-2), LinkedIn (3-5), TikTok (3-5), with 60% niche-specific, 30% moderately popular, and 10% broad reach. Research and select hashtags using the competitor analysis method (identify successful competitor tags), the follower analysis method (review hashtags used by your audience), and the tiered relevance method (categorize by specificity). Organize hashtags into collections: branded (company/product-specific), campaign-specific (temporary for promotions), community (industry/interest groups), content-specific (describing post content), and trending (timely but relevant only). Implement strategic hashtag placement: Instagram (comment section for cleaner captions), Twitter (integrated naturally into text), LinkedIn (end of post, limited to most relevant), TikTok (caption and first comment). Develop testing protocols using engagement rate per hashtag group to optimize future selections. Implement trending hashtag evaluation framework: relevance score (1-5), audience alignment (1-5), and brand appropriateness (1-5), pursuing only those scoring 12+. Create branded hashtag development guidelines focusing on memorability, brevity, uniqueness, and pronunciation clarity.",
+    "community_management": "Develop response templates for common interaction types (questions, complaints, praise, suggestions) while ensuring personalization points for authentic engagement. Create escalation protocols with clear trigger criteria, response timeframes, and resolution paths for different severity levels of negative interactions. Design engagement prompts using specific, experience-based questions rather than yes/no formats, focusing on topics where the audience has personal expertise. Implement user-generated content solicitation frameworks with clear submission guidelines, permission protocols, and recognition systems. Create community milestone recognition approaches that celebrate both group achievements and individual contributions. Develop conversation facilitation techniques that connect community members with complementary experiences or questions. Maintain brand voice consistency using a tone matrix that adapts core voice characteristics to different emotional contexts while remaining authentic. Implement content moderation guidelines with clear prohibited content categories, warning systems, and rehabilitation paths for minor infractions. Design community health metrics that track not just growth but meaningful engagement, relationship development, and value creation.",
+    "trend_adaptation": "Assess trend relevance using the PIE framework: Potential (audience interest), Importance (alignment with brand values), and Ease (implementation feasibility). Develop trend adaptation approaches based on three models: Observation (commenting on trends), Participation (joining trends authentically), and Innovation (adding unique value to existing trends). Analyze trend lifecycles using the four-stage framework: emergence (early adoption), growth (mainstream awareness), maturity (widespread participation), and decline (decreasing engagement), prioritizing early growth stage entry. Create platform-specific trend implementation strategies respecting each platform's unique culture, format requirements, and audience expectations. Develop brand filter criteria that evaluate trends against core values, voice guidelines, and audience expectations before participation. Implement trend customization techniques that maintain brand distinctiveness while leveraging trend momentum. Create a trend calendar incorporating predictable seasonal trends, industry events, and cultural moments with preparation timelines for each. Develop trend performance measurement frameworks with short-term engagement metrics and long-term brand impact assessments.",
+    "meeting_agenda": "Structure meetings with a clear purpose statement, specific desired outcomes, and explicit decision points identified in advance. Begin with a brief connection activity (1-3 minutes) to build psychological safety and engagement before diving into content. Front-load high-energy, strategic, or creative discussions requiring full engagement, placing informational updates later. Allocate time using the 60-30-10 rule: 60% discussion of key agenda items, 30% for emerging topics/questions, and 10% for summarizing and next steps. Assign specific roles including: facilitator (keeps discussion on track), timekeeper (manages agenda timing), note-taker (captures decisions and action items), and devil's advocate (constructively challenges assumptions). Create discussion prompts using the What-So What-Now What framework for each major topic. Implement decision-making frameworks appropriate to the decision type: consultative, democratic, or consensus-based with clear indicators of which method is being used for each decision point. Design pre-meeting and post-meeting components including preparation materials (distributed 48+ hours in advance) and accountability follow-ups (within 24 hours) to maximize meeting effectiveness.",
+    "business_proposal": "Create an executive summary using the Problem-Solution-Value framework: client's challenge, your unique solution approach, and specific, quantified value delivery. Structure the needs analysis section using the Gap Analysis method: current state, desired state, and the specific gaps preventing achievement. Develop solution descriptions using the Features-Advantages-Benefits framework for each component, connecting technical specifications to tangible outcomes. Present pricing using value-based frameworks that connect costs directly to specific benefits, ROI timelines, or cost-avoidance calculations rather than focusing on absolute figures. Design implementation timelines with clear phases, milestones, dependencies, and client touchpoints, highlighting resource requirements and responsibilities for each stage. Create a risk management section using the Identify-Analyze-Mitigate approach for potential challenges, demonstrating foresight and contingency planning. Articulate competitive advantages using the 'Only We' framework to highlight truly unique capabilities and approaches without directly naming competitors. Design the closing section with a clear, specific call-to-action, immediate next steps, and a compelling future vision of the partnership's success.",
+    "executive_presentation": "Design slides with the 1-3-10 principle: one clear message per slide, supported by no more than three key points, using no more than ten words per point. Structure presentations using the Situation-Complication-Resolution framework: establish context, highlight challenges or opportunities, present your solution or recommendation. Create data visualizations focusing on trends, comparisons, and relationships rather than comprehensive data sets, with clear implications highlighted directly on each visual. Develop the main message for each section using the 'If you remember nothing else...' test, ensuring it stands alone as a coherent point. Transform technical concepts using analogy, metaphor, and real-world examples that connect to executives' existing knowledge base and business priorities. Anticipate and address potential objections or questions proactively within the presentation itself, demonstrating thorough analysis. Create a narrative arc with a clear beginning (context), middle (challenge/opportunity), and end (recommendation with benefits) to maintain engagement. Design decision facilitation frameworks that present clear options with explicit pros, cons, risks, and recommended direction, making it easy for executives to evaluate and choose a path forward.",
+    "swot_analysis": "Identify strengths using the VRIO framework: Valuable (creates customer value), Rare (not commonly held by competitors), Inimitable (difficult to copy), and Organized (effectively implemented), focusing on truly distinctive capabilities. Assess weaknesses using the Impact-Effort matrix: categorizing limitations by their business impact and the effort required to address them, prioritizing high-impact, low-effort improvements. Evaluate opportunities using the Market Attractiveness-Capability Fit matrix: plotting potential opportunities based on market potential and organizational capability to capture value. Analyze threats using the Probability-Impact matrix: assessing likelihood and potential damage to prioritize mitigation efforts. Develop cross-impact analysis between SWOT quadrants: identifying how strengths can help capture opportunities or mitigate threats, and how weaknesses might prevent opportunity capture or amplify threats. Create action plans for each quadrant using the Objective-Strategy-Tactics framework: what to achieve, general approach, and specific action steps. Prioritize SWOT findings using the Urgency-Importance matrix to focus attention on critical elements. Integrate competitive context throughout the analysis using benchmark comparisons for strengths and weaknesses, and market dynamics assessment for opportunities and threats.",
+    "customer_persona": "Develop demographic profiles that go beyond basic statistics to identify relevant life stage factors, technology adoption patterns, and professional contexts that influence behavior. Create psychographic attributes using the VALs (Values, Attitudes, Lifestyles) framework to understand underlying motivations rather than surface demographics. Articulate goals and motivations using the Jobs-to-be-Done framework: functional jobs (practical tasks), emotional jobs (feelings sought), and social jobs (how they want to be perceived). Map pain points and challenges using the Four Dimensions approach: financial (costs/budget), functional (features/performance), time-based (efficiency/convenience), and emotional (fears/frustrations). Develop decision-making process maps using the See-Think-Do-Care framework: awareness channels, consideration factors, purchase triggers, and loyalty drivers. Assess information consumption preferences across channels, formats, and content types with specific platform usage patterns. Define brand relationship expectations using the Five Dimensions model: reliability, responsiveness, assurance, empathy, and tangibles. Create persona-specific objection anticipation using the FEARS framework: Financial concerns, Experience uncertainties, Alternative options, Reliability questions, and Social proof needs.",
+    "project_brief": "Define project scope using the IN/OUT method: explicitly listing what is included and excluded from the project boundaries to prevent scope creep. Formulate objectives using the SMART+ framework: Specific, Measurable, Achievable, Relevant, Time-bound plus Evaluated and Reviewed at key milestones. Identify stakeholders using the RACI matrix: Responsible (doers), Accountable (owners), Consulted (advisors), and Informed (kept updated), with specific individuals assigned to each role. Quantify resource requirements across six categories: human resources (roles, time commitments), technical (tools, platforms, access), financial (budget breakdowns), informational (data, documentation), physical (space, equipment), and time (duration, key dates). Develop timelines using milestone-based planning: identifying critical checkpoints with specific deliverables rather than detailed task scheduling at the brief stage. Create success criteria using KPI frameworks with three levels: business outcomes (ultimate goals), project deliverables (specific outputs), and process metrics (efficiency measures). Assess risks using the Four Types framework: technical, resource, schedule, and business risks, each with likelihood, impact, and mitigation strategies. Establish communication protocols specifying regular updates (method, frequency, audience), decision-making processes, and escalation paths.",
+    "standard_operating_procedure": "Structure procedures using the Five Components framework: purpose (why the procedure exists), scope (what it covers and excludes), responsibilities (who performs each step), definitions (terminology clarification), and procedure (detailed steps). Format steps using the Action-Detail-Reason structure: clear directive, specific implementation guidance, and explanation of why it matters. Define process boundaries using clear trigger events (when the procedure begins) and completion criteria (when it ends). Detail required resources using the Five Ms: Manpower (people/skills), Machines (equipment/tools), Materials (supplies/inputs), Methods (systems/software), and Measurements (quality checks). Create decision point guidance using IF-THEN-ELSE structures for handling variables and exceptions within the process. Develop troubleshooting sections using the Problem-Cause-Solution format for common issues. Integrate visual aids strategically: flowcharts for process overview, screenshots for digital processes, and diagrams for physical tasks or complex decisions. Establish quality control using verification points: self-checks, peer reviews, and formal approvals with specific criteria for each. Implement continuous improvement mechanisms with performance metrics, feedback collection processes, and regular review schedules.",
+    "okr_development": "Formulate objectives using the Three Criteria method: meaningful (connects to mission), actionable (team can influence), and aspirational (requires stretching beyond current capabilities). Develop key results using the Three Types framework: output measures (direct deliverables), outcome measures (desired impacts), and process measures (behavior/activity changes), with 3-5 key results per objective. Create alignment using the Waterfall-Cascade approach: connecting team OKRs to department OKRs, and department OKRs to organizational OKRs with clear line-of-sight. Calibrate stretch targets using the 70% Rule: objectives challenging enough that successful completion is approximately 70% likely rather than guaranteed. Establish progress tracking using the 0.0-1.0 scale with specific milestones defined for 0.3, 0.7, and 1.0 achievement levels for each key result. Align resources by identifying capability gaps and required support for each objective with specific enablement plans. Avoid common pitfalls using the Five Don'ts: activities as key results, sandbagging (setting easily achieved targets), vague language, unmeasurable outcomes, and too many OKRs (exceed 3-5 objectives or 3-5 key results per objective). Implement review cadence with weekly check-ins, monthly deep dives, and quarterly retrospectives with specific formats for each.",
+    "problem_solution_framework": "Define problems using the Four Parts method: current situation, desired situation, obstacles, and consequences of inaction, with specific metrics for each component. Conduct root cause analysis using structured approaches: Five Whys (sequential questioning), Fishbone diagram (categorized factors), or Pareto analysis (identifying the vital 20% causing 80% of issues). Develop solution criteria using the TESTS framework: Technical feasibility, Economic viability, Social desirability, Temporal sustainability, and Strategic alignment, with weighted scoring for each dimension. Generate alternative solutions using divergent thinking techniques: analogical thinking (solutions from similar problems in different contexts), reverse thinking (considering opposite approaches), and combinatorial thinking (mixing elements of different approaches). Evaluate alternatives using decision matrices with weighted criteria and sensitivity analysis to understand threshold effects. Create implementation plans with the Three Horizons approach: immediate actions, short-term initiatives, and long-term transformations with clear transition triggers between horizons. Anticipate resistance using the Four Sources framework: technical disagreement, political concerns, organizational limitations, and psychological resistance, with mitigation strategies for each type. Develop outcome measurement methodology using leading indicators (early success signals) and lagging indicators (ultimate impact metrics) with specific data collection methods.",
+    "decision_matrix": "Identify decision criteria using the MECE principle (Mutually Exclusive, Collectively Exhaustive) to ensure comprehensive coverage without overlap. Develop weighting methodology using the Paired Comparison approach: evaluating criteria importance in direct comparison to each other rather than abstract rating. Create scoring scales using the Defined Levels method: establishing clear, consistent definitions for each score level (typically 1-5 or 1-10) rather than arbitrary numbering. Articulate alternatives using the Distinct Options principle: ensuring meaningful differences between options rather than minor variations of the same approach. Standardize evaluation using the Independent Assessment method: scoring each alternative against each criterion separately before aggregating results. Conduct sensitivity analysis by adjusting weightings within reasonable ranges (±20%) to test result stability under different prioritization scenarios. Interpret results using the Prioritization Matrix: plotting alternatives by total weighted score and implementation feasibility to identify quick wins and strategic investments. Develop implementation planning from decision outcomes using the Next Steps framework: immediate actions, resource requirements, risk mitigations, and performance metrics for the selected option.",
+    "email_response": "Craft acknowledgment openings based on message type: appreciation ('Thank you for...'), request ('I'd be happy to help with...'), information ('I appreciate you sharing...'), or problem ('I understand your concern about...'). Structure responses using the Three-Part framework: acknowledgment, information/action, and clear next steps, with distinct paragraphs for each. Calibrate tone using the Relationship-Urgency matrix: adjusting formality and directness based on relationship closeness and situation urgency. Format action items using the Action-Owner-Deadline structure: specific tasks, responsible parties, and clear timeframes, with important points bolded for scanability. Implement response timing protocols based on message priority: urgent issues (same day), standard requests (24-48 hours), FYI messages (within the week), with auto-acknowledgments for longer tasks. Develop next steps and follow-up frameworks using the Three Options approach: your action, their action, or mutual action with specific triggers for subsequent communication. Create professional closing statements aligned with response content: action-oriented ('Looking forward to implementing these changes'), decision-needed ('Please let me know your thoughts by Thursday'), or relationship-building ('Appreciated working through this together'). Format for mobile readability with short paragraphs (2-3 sentences), bulleted lists for multiple items, and key information in the first 50% of the message.",
+    "resume_enhancement": "Craft achievement statements using the CAR method (Challenge-Action-Result) with specific metrics and outcomes quantified whenever possible. Optimize role descriptions using power verbs categorized by skill type: leadership verbs ('directed,' 'orchestrated'), analytical verbs ('assessed,' 'quantified'), creative verbs ('conceptualized,' 'designed'), and technical verbs ('implemented,' 'programmed'). Integrate ATS-friendly keywords by analyzing job descriptions for both explicit requirements and implicit skills, incorporating them naturally in context rather than keyword stuffing. Develop professional summaries using the Three-Element framework: professional identity, key expertise areas, and unique value proposition in 3-5 impactful sentences. Present skills using the T-shaped professional model: highlighting broad competencies across the top while demonstrating deep expertise in key areas most relevant to target roles. Optimize layout using the F-pattern design principle: placing critical information along the top and left margins where recruiters' eyes naturally track. Address experience gaps using the Bridge strategy: emphasizing transferable skills, relevant projects, professional development, or alternative experience types. Adapt industry terminology using the Mirror technique: analyzing target job descriptions to match language conventions exactly, particularly for technical roles with specific vocabulary expectations.",
+    "cover_letter": "Create pattern-interrupting openings using the Three Hooks approach: surprising relevant achievement, compelling company-specific insight, or authentic connection to mission/values that differentiates from standard openings. Demonstrate company research by referencing specific initiatives, challenges, values, or leadership perspectives beyond surface-level information from the homepage. Align skills with requirements using the Parallel Construction method: directly connecting your capabilities to job requirements with specific examples, using similar language and structure. Select achievements using the Relevance-Recency-Results framework: prioritizing examples most directly applicable to the target role, from recent experience, with impressive measurable outcomes. Articulate personal brand using the Unique Value Proposition format: 'I bring X perspective and Y skills, which deliver Z results in organizations like yours.' Demonstrate cultural fit through value alignment: identifying 2-3 core company values and providing specific examples of how your work embodies those same principles. Craft calls-to-action using the Confident Collaboration approach: expressing enthusiasm for next steps while positioning yourself as a potential colleague rather than a supplicant. Customize efficiently by creating modular content blocks that can be recombined and lightly edited for different applications rather than writing entirely new letters each time.",
+    "networking_message": "Craft personalized openings using specific, researched connection points beyond obvious resume facts, demonstrating genuine interest rather than template-driven outreach. Develop clear value propositions using the Give-Ask-Give sandwich: offering something helpful, making a specific request, and suggesting another value-add, emphasizing mutual benefit rather than one-sided asking. Articulate connection rationale using the Three Valid Bases: learning goals (seeking knowledge they have), shared interests (genuine common ground), or specific opportunity (clear mutual benefit), avoiding vague or generic purposes. Create response requests using Low-Friction Asks: specific, easy-to-fulfill next steps that respect the recipient's time constraints and make responding simple. Develop follow-up frameworks with the 3-7-21 approach: initial follow-up after 3 business days, second attempt after 7 days, final check-in after 21 days, each adding new value rather than just reminding. Calibrate professional voice using the Platform Context method: adapting formality, technical language, and message structure to platform norms (LinkedIn, email, industry forums, etc.). Optimize message length using the One Screen principle: ensuring the entire message is visible without scrolling on mobile devices, typically 120-150 words. Design subject lines and preview text using the Specific Value framework: clearly stating the unique benefit of connecting rather than generic networking language.",
+    "personal_bio": "Select perspective based on usage context: first-person for social media and personal websites (more authentic and direct), third-person for media publications and corporate sites (more credible and professional). Structure using the Present-Past-Future framework: current role and expertise, relevant background that built credibility, and forward-looking professional focus. Select achievements using the Rule of Three: identifying the three most impressive and relevant accomplishments that demonstrate key strengths and support your professional narrative. Incorporate personality through strategic personal details: selecting 1-2 non-professional interests or characteristics that reinforce your professional brand rather than random hobbies. Articulate expertise using the T-method: stating broad professional category first, then specifying unique specializations or approaches within that field. Develop vision statements using the Impact framework: describing the specific change you aim to create rather than generic aspirations. Optimize length using the Platform Guide: short-form (Twitter/Instagram: 150 characters), mid-form (LinkedIn/website: 300-500 characters), and long-form (speaker introductions/media kits: 500+ characters). Calibrate tone along the Formal-Conversational-Casual spectrum based on industry norms, platform expectations, and usage purpose.",
+    "time_management": "Assess priorities using the Eisenhower Matrix: categorizing tasks as Important-Urgent (do immediately), Important-Not Urgent (schedule time), Not Important-Urgent (delegate if possible), or Not Important-Not Urgent (eliminate). Implement time blocking using the Power Hour technique: scheduling focused work in 60-90 minute intervals aligned with natural energy peaks, with 10-15 minute breaks between blocks. Apply task batching based on five categories: communication (emails, calls), creative work (writing, design), analytical tasks (research, planning), administrative work (forms, documentation), and learning (training, reading), grouping similar cognitive modes. Combat procrastination using the 5-Minute Rule: committing to just five minutes of a challenging task to overcome activation energy, often leading to continued progress. Establish interruption management protocols: designated Focus Time (no interruptions), Available Time (open to urgent matters), and Open Door Time (fully available) with clear signals for each mode. Integrate energy management using the Peak-Trough-Recovery cycle: scheduling demanding tasks during energy peaks, administrative work during energy troughs, and relationship-building during recovery phases. Apply delegation decision frameworks using the 70% Rule: delegating tasks that someone else can perform at 70% of your capability to free up time for your highest-value contributions. Implement progress tracking using the Weekly Review method: assessing completed tasks, adjusting upcoming priorities, and identifying abandonment candidates (tasks repeatedly deferred).",
+    "goal_setting": "Categorize goals across key life domains: professional, financial, learning/growth, relationships, health/wellbeing, and contribution/purpose, ensuring balanced development rather than over-focusing on a single area. Apply the SMART+ framework to each goal: Specific (clear target), Measurable (trackable metrics), Achievable (challenging but possible), Relevant (aligned with values), Time-bound (clear deadline), plus Evaluated (regular review points) and Reviewed (adjustment mechanisms). Break down goals using the Milestone Method: identifying 3-5 significant progress points between current state and end goal, each with specific completion criteria. Assess resource requirements using the Four Capitals framework: financial capital (money needed), human capital (skills required), social capital (relationships/support), and time capital (hours needed). Anticipate obstacles using the Premortem technique: imagining goal failure and working backward to identify potential challenges before they occur. Develop contingency plans using the If-Then planning approach: creating specific response strategies for likely obstacles rather than generic backup plans. Create accountability systems using the Three Levels method: self-accountability (tracking tools, journals), partner accountability (regular check-ins with mentor/coach), and public accountability (shared commitments within appropriate communities). Integrate reward systems using the Reinforcement Hierarchy: immediate small rewards for milestone completion, moderate rewards for significant progress, and meaningful celebration for goal achievement.",
+    "learning_summary": "Identify information hierarchy using the Pyramid Principle: main conclusion at top, supporting arguments in middle, and specific evidence/details at base, structuring from most to least important. Extract key concepts using the Five Questions method: What? (core ideas), Why? (purpose/importance), How? (processes/methods), When? (contexts/applications), and What If? (implications/extensions). Organize supporting details using appropriate frameworks: chronological (time-based processes), spatial (physical relationships), problem-solution (challenges and resolutions), compare-contrast (similarities and differences), or cause-effect (influence relationships). Create visual organization using appropriate formats: mind maps (concept relationships), flowcharts (processes), matrices (comparisons), timelines (sequences), or hierarchy charts (classifications). Map concept relationships using the Connection Web technique: identifying how key ideas relate through supporting, contrasting, extending, or qualifying relationships. Identify application opportunities using the Three Contexts framework: personal application (individual use), professional application (work setting), and teaching application (explaining to others). Develop comprehension questions using Bloom's Taxonomy: remembering (recall), understanding (explanation), applying (usage), analyzing (examination), evaluating (assessment), and creating (generation). Implement retrieval practice using the Cornell Note system: recording key information, developing questions, summarizing content, and creating regular review intervals (24hr, 1wk, 1mo) to optimize retention.",
+    "interview_prep": "Anticipate questions using the STAR Matrix: categorizing likely questions (behavioral, technical, situational, motivational) crossed with key job requirements, preparing for the highest-probability intersections. Develop response frameworks using the enhanced STAR method: Situation (specific context, 10%), Task (your specific responsibility, 10%), Action (detailed steps taken, 60%), Results (quantifiable outcomes, 20%), plus Reflection (learning or improvement). Demonstrate technical knowledge through the Three-Layer approach: fundamental understanding (core principles), practical application (hands-on experience), and advanced insight (cutting-edge awareness), adjusting depth based on role requirements. Incorporate company research using the Five Levels framework: business model, recent developments, competitive landscape, culture/values, and strategic challenges, integrating these insights naturally rather than reciting facts. Present strengths using the Evidence-Based approach: stating the strength, providing specific proof points, and connecting directly to job requirements without exaggeration. Address weaknesses using the Growth Framework: honest acknowledgment, improvement actions taken, and progress demonstrated, focusing on non-critical job skills. Prepare interviewer questions using the Three Categories method: role-specific (daily responsibilities), team-related (working relationships), and organization-focused (culture, future direction), demonstrating strategic thinking. Develop follow-up communications using the Three Components approach: appreciation, specific conversation highlights, and enthusiasm for next steps, sent within 24 hours of the interview.",
+    "feedback_framework": "Separate observations from interpretations using factual language to describe specific behaviors or outcomes without judgment or assumption about intent. Structure feedback using the Situation-Behavior-Impact (SBI) framework: specific context, objective description of actions, and clear explanation of effects on others or results. Balance constructive feedback with the 3:1 ratio: at least three positive observations for every improvement suggestion to maintain receptivity and motivation. Create improvement suggestions using the Future-Focus method: emphasizing desired behaviors and outcomes rather than dwelling on past mistakes. Consider timing and environment factors using the Four Conditions checklist: private setting (for constructive feedback), appropriate emotional states, sufficient time for discussion, and relevant proximity to the situation being discussed. Assess recipient receptivity using the Readiness Indicators: current stress levels, relationship trust, previous response to feedback, and alignment with personal goals. Enhance specificity using the contrast method: clearly distinguishing between what is working well and what could be improved rather than making general statements. Connect feedback to growth opportunities by identifying development resources, learning pathways, and support systems related to improvement areas."
+  },
+  "request_flow": {
+    "warmup": {
+      "enabled": true,
+      "models": ["categorizer_ai", "fast_ai"],
+      "trigger": "chatbox_open"
+    },
+    "image_detection": {
+      "enabled": true,
+      "force_model": "image_model",
+      "condition": "contains_image"
+    },
+    "context_limits": {
+      "force_thinking_ai": 100000,
+      "force_gemini_pro": 200000,
+      "deny_request": 900000
+    },
+    "categorization": {
+      "L": {
+        "model": "thinking_ai",
+        "description": "Use Thinking AI for tasks or very hard questions"
+      },
+      "M": {
+        "model": "medium_ai",
+        "description": "Use Medium AI for more difficult and everyday queries"
+      },
+      "H": {
+        "model": "thinking_ai",
+        "orchestration": true,
+        "fast_response_model": "thinking_fast_response_ai",
+        "description": "Use Thinking AI (master AI) with orchestration"
+      }
+    }
+  },
+  "workflow_templates": {
+    "research_report": {
+      "description": "Comprehensive research report generation",
+      "workflow": [
+        {
+          "type": "linear",
+          "tasks": [
+            {
+              "model": "thinking_ai",
+              "prompt": "Research {topic} focusing on current state, trends, and future projections. Include market size, growth data, and technological advancements.",
+              "output_variable": "primary_research",
+              "config": {
+                "temperature": 0.3,
+                "addons": ["research", "technical"]
+              }
+            },
+            {
+              "model": "thinking_ai",
+              "prompt": "Research major companies and key players in {topic}. Identify market leaders, innovative startups, and strategic positioning.",
+              "output_variable": "company_research",
+              "config": {
+                "temperature": 0.3,
+                "addons": ["research", "business"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "thinking_ai",
+              "prompt": "Create a comprehensive report on {topic} using:\n\nINDUSTRY OVERVIEW:\n{primary_research}\n\nKEY PLAYERS:\n{company_research}\n\nInclude executive summary, industry analysis, competitive landscape, growth drivers, challenges, and future outlook.",
+              "output_variable": "draft_report",
+              "config": {
+                "temperature": 0.6,
+                "addons": ["writing", "business", "technical"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "finished_task_ai",
+              "prompt": "Announce completion of comprehensive research report on {topic}",
+              "output_variable": "completion_message",
+              "config": {
+                "temperature": 0.7
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "marketing_campaign": {
+      "description": "Complete marketing campaign with visuals",
+      "workflow": [
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "thinking_ai",
+              "prompt": "Develop a creative marketing campaign concept for {product}. Target audience: {audience}. Brand values: {values}.",
+              "output_variable": "campaign_concept",
+              "config": {
+                "temperature": 0.8,
+                "addons": ["creative", "marketing"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "linear",
+          "tasks": [
+            {
+              "model": "thinking_ai",
+              "prompt": "Write social media copy for Instagram, Twitter, and Facebook based on:\n{campaign_concept}\n\nCreate 5 posts for each platform with hashtags and CTAs.",
+              "output_variable": "social_media_copy",
+              "config": {
+                "temperature": 0.7,
+                "addons": ["writing", "marketing", "instagram", "twitter", "facebook"]
+              }
+            },
+            {
+              "model": "imagen_4_ultra",
+              "prompt": "Create a product image for {product} based on this campaign concept: {campaign_concept}",
+              "output_variable": "product_image",
+              "config": {
+                "aspect_ratio": "1:1",
+                "enhance_prompt": true,
+                "quality": "ultra"
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "image_analysis_ai",
+              "prompt": "Evaluate this product image for quality and alignment with the campaign concept: {campaign_concept}",
+              "input_image": "{product_image}",
+              "output_variable": "image_evaluation",
+              "config": {
+                "temperature": 0.5
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "finished_task_ai",
+              "prompt": "Announce completion of marketing campaign for {product} including social media content and product imagery",
+              "output_variable": "completion_message",
+              "config": {
+                "temperature": 0.7
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "code_project": {
+      "description": "Software development project",
+      "workflow": [
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "code_ai",
+              "prompt": "Design the architecture for {project_description}. Include component breakdown, data flow, and technology stack recommendations.",
+              "output_variable": "architecture_design",
+              "config": {
+                "temperature": 0.6,
+                "addons": ["technical"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "code_ai",
+              "prompt": "Implement the core functionality for {project_description} based on this architecture:\n{architecture_design}\n\nProvide complete, production-ready code with comments.",
+              "output_variable": "implementation_code",
+              "config": {
+                "temperature": 0.5,
+                "addons": ["technical"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "code_ai",
+              "prompt": "Create comprehensive tests for this implementation:\n{implementation_code}\n\nInclude unit tests, integration tests, and test documentation.",
+              "output_variable": "test_code",
+              "config": {
+                "temperature": 0.4,
+                "addons": ["technical"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "inline",
+          "tasks": [
+            {
+              "model": "finished_task_ai",
+              "prompt": "Announce completion of software project {project_description} with architecture, implementation, and tests",
+              "output_variable": "completion_message",
+              "config": {
+                "temperature": 0.7
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "error_handling": {
+    "error_types": {
+      "transient": {
+        "description": "Temporary failures like network issues, rate limits",
+        "strategy": "automatic_retry",
+        "max_retries": 5,
+        "backoff_strategy": "exponential"
+      },
+      "persistent": {
+        "description": "API errors, authentication failures",
+        "strategy": "alert_manual_intervention",
+        "max_retries": 1
+      },
+      "resource": {
+        "description": "Memory limits, timeout errors",
+        "strategy": "scale_or_optimize",
+        "max_retries": 2
+      },
+      "logical": {
+        "description": "Invalid inputs, unexpected outputs",
+        "strategy": "fallback_alternative",
+        "max_retries": 3
+      },
+      "fatal": {
+        "description": "Unrecoverable system errors",
+        "strategy": "circuit_break_degrade",
+        "max_retries": 0
+      }
+    },
+    "retry_config": {
+      "base_delay_ms": 1000,
+      "max_delay_ms": 30000,
+      "jitter_enabled": true,
+      "exponential_base": 2,
+      "retryable_status_codes": [429, 503, 504, 500]
+    },
+    "circuit_breaker": {
+      "enabled": true,
+      "failure_threshold": 5,
+      "timeout_seconds": 60,
+      "half_open_requests": 3
+    }
+  },
+  "rate_limiting": {
+    "openrouter": {
+      "requests_per_minute": 60,
+      "tokens_per_minute": 500000,
+      "algorithm": "token_bucket",
+      "burst_allowance": 10
+    },
+    "google_ai": {
+      "requests_per_minute": 60,
+      "requests_per_day": 1500,
+      "algorithm": "token_bucket"
+    }
+  },
+  "model_fallbacks": {
+    "thinking_ai": ["sub_master_ai", "medium_ai"],
+    "medium_ai": ["fast_ai"],
+    "code_ai": ["thinking_ai"],
+    "imagen_4_ultra": ["image_model"],
+    "image_model": ["imagen_4_ultra"]
+  },
+  "monitoring": {
+    "metrics": {
+      "performance": ["response_time", "token_processing_rate", "queue_latency"],
+      "resource_utilization": ["cpu_usage", "memory_usage", "network_bandwidth", "disk_usage"],
+      "workflow": ["success_rate", "step_completion_time", "workflow_volume"],
+      "api": ["request_count", "error_rate", "rate_limit_usage"],
+      "business": ["cost_per_request", "cost_by_model", "feature_usage"]
+    },
+    "logging": {
+      "format": "json",
+      "level": "INFO",
+      "structured": true,
+      "correlation_id_enabled": true
+    },
+    "alerting": {
+      "enabled": true,
+      "channels": ["email", "webhook"],
+      "thresholds": {
+        "error_rate": 0.05,
+        "response_time_p95": 5000,
+        "queue_depth": 5000
+      }
+    }
+  }
+}
